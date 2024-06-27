@@ -9,6 +9,7 @@ from flask import Flask
 
 os.putenv("PYTHONUTF8", "1")
 
+from xbcli import cli_util
 
 app = Flask(__name__)
 
@@ -27,7 +28,7 @@ def build(ctx: click.Context, message: str, force: bool):
     work_path = os.path.abspath(os.path.join(os.path.dirname(__file__)))
     os.chdir(work_path)
 
-    print(f"xba2l: {work_path}")
+    print(f"xbcli: {work_path}")
     result = cli_util.check_output("git status --porcelain", cwd=work_path)
     if force is False and any((re.match("^\s*?M\s+", text) for text in result)):
         return cli_util.click_exit("Found modified file")
@@ -49,7 +50,7 @@ def build(ctx: click.Context, message: str, force: bool):
     for major, minor, micro in release_list[-3:]:
         click.echo(f"v{major}.{minor}.{micro}")
 
-    version_filename = os.path.abspath(os.path.join(work_path, "xba2l/__version__.py"))
+    version_filename = os.path.abspath(os.path.join(work_path, "xbcli/__version__.py"))
     with open(version_filename, "r") as f:
         content = f.read()
 
