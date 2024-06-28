@@ -11,15 +11,16 @@ from click import testing
 from flask import Flask
 
 __all__ = [
+    "app_cli_runner",
+    "check_output",
     "click_echo",
     "click_exit",
-    "app_cli_runner",
+    "conda_command",
+    "conda_executable",
+    "init_conda",
+    "platform_uname",
     "run_command",
     "run_subprocess",
-    "check_output",
-    "conda_command",
-    "init_conda",
-    "conda_executable",
 ]
 
 
