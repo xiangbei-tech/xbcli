@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import click
+import psutil
 from click import testing
 from flask import Flask
 
@@ -78,6 +79,7 @@ def run_subprocess(
     shell: bool = True,
     executable: str | None = None,
     detached: bool = False,
+    priority: int | None = None,
 ) -> int:
     if echo is True:
         if executable is None:
@@ -109,7 +111,9 @@ def run_subprocess(
             stdout=sys.stdout,
             stderr=sys.stderr,
         )
-        subprocess.Popen(" ".join(args), **kwargs)
+        p = subprocess.Popen(" ".join(args), **kwargs)
+        if priority is not None:
+            psutil.Process(p.pid).nice(priority)
         return 0
     else:
         kwargs.update(
@@ -117,7 +121,8 @@ def run_subprocess(
             stderr=subprocess.PIPE,
         )
         p = subprocess.Popen(" ".join(args), **kwargs)
-
+        if priority is not None:
+            psutil.Process(p.pid).nice(priority)
         while True:
             output = p.stdout.readline()
             if not output and p.poll() is not None:
@@ -201,7 +206,7 @@ def conda_command(
     shell: bool = True,
     echo: bool = True,
     detached: bool = False,
-    high_priority: bool = False,
+    priority: int | None = None,
 ) -> int:
     if echo is True:
         print(">>>", " ".join(args))
@@ -209,9 +214,10 @@ def conda_command(
     command = conda_executable(*args, entry_python=entry_python)
 
     if detached is True:
-        return run_subprocess(command, shell=shell, detached=True)
-    elif high_priority is True:
-        return run_subprocess(command, shell=shell)
+        return run_subprocess(command, shell=shell, detached=True, priority=priority)
+
+    if priority is not None:
+        return run_subprocess(command, shell=shell, priority=priority)
     else:
         return run_command(command, echo=False)
 
