@@ -239,13 +239,15 @@ def init_conda(entry_python: str, python_version: str, force: bool = False, requ
 
     if any((text.startswith(entry_python + " ") for text in result)):
         if force is True:
-            run_command(f"{conda_filename} remove -n {entry_python} --all -y")
+            ret = run_command(f"{conda_filename} remove -n {entry_python} --all -y")
             environment_path = os.path.abspath(os.path.join(os.path.dirname(conda_filename), f"../envs/{entry_python}"))
             if os.path.isdir(environment_path):
                 shutil.rmtree(environment_path)
-            return run_command(f"{conda_filename} create -q --name {entry_python} python={python_version} -y")
+            ret = run_command(f"{conda_filename} create -q --no-default-packages --name {entry_python} python={python_version} -y")
     else:
-        return run_command(f"{conda_filename} create -q --name {entry_python} python={python_version} -y")
+        ret = run_command(f"{conda_filename} create -q --no-default-packages --name {entry_python} python={python_version} -y")
 
     if requirements_txt is not None:
-        return conda_command(f'pip install --no-warn-script-location -r "{requirements_txt}"', entry_python=entry_python)
+        ret = conda_command(f'pip install --no-warn-script-location -r "{requirements_txt}"', entry_python=entry_python)
+        
+    return ret
