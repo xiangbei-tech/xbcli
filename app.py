@@ -54,7 +54,7 @@ def build(ctx: click.Context, message: str, force: bool):
     with open(version_filename, "r") as f:
         content = f.read()
 
-    result = re.findall("^VERSION\\s*?=\\s*?\(\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?\)", content, flags=re.M | re.S)
+    result = re.findall("^VERSION\\b.*?=\\s*?\(\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?\)", content, flags=re.M | re.S)
     print(result)
     if len(result) == 1 and isinstance(result[0], tuple) and result[0][-1].isdigit():
         previous_version = result[0]
@@ -64,7 +64,7 @@ def build(ctx: click.Context, message: str, force: bool):
     new_version_text = tuple([*previous_version[:-1], str(int(previous_version[-1]) + 1)])
     print("Found version: {:s}, new version: {:s}".format(".".join(previous_version), ".".join(new_version_text)))
 
-    new_content = re.sub("^(VERSION\\s*?=\\s*?)\(.*?\)", "\\g<1>({:s})".format(", ".join(new_version_text)), content, flags=re.M)
+    new_content = re.sub("^(VERSION\\b.*?=\\s*?)\(.*?\)", "\\g<1>({:s})".format(", ".join(new_version_text)), content, flags=re.M)
     with open(version_filename, "w") as f:
         f.write(new_content)
 
