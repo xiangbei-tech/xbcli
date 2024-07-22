@@ -5,6 +5,7 @@ import re
 import shutil
 import subprocess
 import sys
+import typing as t
 
 import click
 import psutil
@@ -87,7 +88,7 @@ def run_subprocess(
         else:
             print(">>>", executable, *args)
 
-    kwargs = dict()
+    kwargs: dict[str, t.Any] = dict()
     if sys.platform.startswith("win32"):
         kwargs.update(
             startupinfo=subprocess.STARTUPINFO(
@@ -124,6 +125,9 @@ def run_subprocess(
         if priority is not None:
             psutil.Process(p.pid).nice(priority)
         while True:
+            if p.stdout is None:
+                break
+
             output = p.stdout.readline()
             if not output and p.poll() is not None:
                 break
@@ -134,6 +138,9 @@ def run_subprocess(
                 print(output, end="")
 
         while True:
+            if p.stderr is None:
+                break
+
             output = p.stderr.readline()
             if not output and p.poll() is not None:
                 break
@@ -143,13 +150,13 @@ def run_subprocess(
             if isinstance(output, str) and len(output):
                 print(output, end="")
 
-        return p.poll()
+        return p.poll() or 0
 
 
 def check_output(
     *args: str,
     cwd: str | None = None,
-    executable: str = None,
+    executable: str | None = None,
     encoding: str = "utf-8",
     echo: bool = True,
     shell: bool = True,
@@ -161,14 +168,19 @@ def check_output(
     os.chdir(cwd)
     if echo is True:
         print(">>>", " ".join(args).replace("\r\n", "\\n").replace("\n", "\\n"))
-    result = subprocess.check_output(*args, executable=executable, shell=shell)
+    result = subprocess.check_output(" ".join(args), executable=executable, shell=shell)
     os.chdir(previous_cwd)
-    if isinstance(result, bytes):
-        result = result.decode(encoding)
-    if isinstance(result, str):
+    if isinstance(result, (bytes, bytearray)):
+        text = result.decode(encoding)
+    elif isinstance(result, memoryview):
+        text = result.tobytes().decode(encoding)
+    else:
+        text = result
+
+    if isinstance(text, str):
         if echo is True:
-            print(result)
-        return re.split("\r?\n", result)
+            print(text)
+        return re.split("\r?\n", text)
     else:
         raise Exception(f"unsupported return type: {type(result)}")
 
@@ -183,13 +195,13 @@ def conda_executable(*args: str, entry_python: str) -> str:
         result = check_output("which conda", echo=False)
 
     if len(result) == 0 or len(result[0]) == 0:
-        return click_exit("conda not found")
+        click_exit("conda not found")
 
     conda_filename = result[0]
 
     result = check_output(f"{conda_filename} env list", echo=False)
     if not any((text.startswith(entry_python + " ") for text in result)):
-        return click_exit(f"entry_python not found: {entry_python}")
+        click_exit(f"entry_python not found: {entry_python}")
 
     if sys.platform.startswith("win32"):
         if re.match("^(python[3]?$|python[3]? )", args[0]):
@@ -229,7 +241,7 @@ def init_conda(entry_python: str, python_version: str, force: bool = False, requ
         result = check_output("which conda", echo=False)
 
     if len(result) == 0 or len(result[0]) == 0:
-        return click_exit("conda not found")
+        click_exit("conda not found")
 
     conda_filename = result[0]
 
@@ -249,5 +261,5 @@ def init_conda(entry_python: str, python_version: str, force: bool = False, requ
 
     if requirements_txt is not None:
         ret = conda_command(f'pip install --no-warn-script-location -r "{requirements_txt}"', entry_python=entry_python)
-        
+
     return ret

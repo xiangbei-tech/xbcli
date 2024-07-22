@@ -15,3 +15,14 @@ import_heading_localfolder = "Local Modules"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+exclude = ["build", "dist"]
+
+# mypy per-module options:
+
+[[tool.mypy.overrides]]
+module = "xbproc.a2l.*"

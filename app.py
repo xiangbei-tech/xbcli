@@ -40,7 +40,7 @@ def build(ctx: click.Context, message: str, force: bool):
         return cli_util.click_exit("Not clean repository")
 
     result = cli_util.check_output("git tag --list", cwd=work_path, echo=False)
-    release_list: list[tuple[int, int, int]] = []
+    release_list: list[tuple[int, ...]] = []
     for text in result:
         ret = re.findall(f"^v(\d+)\.(\d+)\.(\d+)$", text)
         if len(ret) == 1 and isinstance(ret[0], tuple) and len(ret[0]) == 3:
@@ -54,7 +54,7 @@ def build(ctx: click.Context, message: str, force: bool):
     with open(version_filename, "r") as f:
         content = f.read()
 
-    result: list[str] = re.findall("^VERSION\\s*?=\\s*?\(\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?\)", content, flags=re.M | re.S)
+    result = re.findall("^VERSION\\s*?=\\s*?\(\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?,\\s*?(\d+)\\s*?\)", content, flags=re.M | re.S)
     print(result)
     if len(result) == 1 and isinstance(result[0], tuple) and result[0][-1].isdigit():
         previous_version = result[0]
